@@ -6,9 +6,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/creastat/infra/telemetry"
-	"github.com/creastat/pipeline/core"
-	providers "github.com/creastat/providers/core"
+	providers "github.com/madmike/go-ai-providers/core"
+	"github.com/madmike/go-infra/telemetry"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // TTSStageConfig holds TTS stage configuration

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // ActionStageConfig holds action stage configuration

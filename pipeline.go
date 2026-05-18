@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // Pipeline represents a composable processing pipeline with graph-based execution
@@ -48,7 +48,7 @@ func (p *Pipeline) Execute(ctx context.Context, input <-chan core.Event) core.Pi
 
 		// Execute the graph
 		if err := p.executeGraph(pipelineCtx, input, outputChan); err != nil {
-			// Error already emitted by executeGraph
+			fmt.Printf("Pipeline execution failed: %v\n", err)
 			return
 		}
 	}()
@@ -227,8 +227,6 @@ func (p *Pipeline) routeOutputsStreaming(node *graphNode, state *executionState)
 			case <-state.ctx.Done():
 				return
 			case downstreamState.input <- event:
-			default:
-				// Channel is full or closed, skip this event
 			}
 		}
 	}
@@ -240,26 +238,22 @@ func (p *Pipeline) routeOutputsStreaming(node *graphNode, state *executionState)
 
 		// Check if all upstream nodes have completed
 		allUpstreamDone := true
+	UpstreamLoop:
 		for _, inEdge := range downstreamNode.Inputs() {
 			upstreamState := state.nodeStates[inEdge.From().Name()]
 			select {
 			case <-upstreamState.done:
 			default:
 				allUpstreamDone = false
-				break
+				break UpstreamLoop
 			}
 		}
 
 		if allUpstreamDone {
-			// Safely close the channel - use a sync.Once pattern to prevent double-close
-			state.mu.Lock()
-			select {
-			case <-downstreamState.done:
-				// Already closed, skip
-			default:
+			// Safely close the channel exactly once
+			downstreamState.closeInput.Do(func() {
 				close(downstreamState.input)
-			}
-			state.mu.Unlock()
+			})
 		}
 	}
 }
@@ -286,7 +280,8 @@ type executionState struct {
 
 // nodeState tracks the state of a single node during execution
 type nodeState struct {
-	input  chan core.Event
-	output chan core.Event
-	done   chan struct{}
+	input      chan core.Event
+	output     chan core.Event
+	done       chan struct{}
+	closeInput sync.Once
 }

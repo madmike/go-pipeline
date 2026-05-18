@@ -3,25 +3,12 @@ package stages
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/creastat/infra/telemetry"
-	"github.com/creastat/pipeline/core"
-	providers "github.com/creastat/providers/core"
-	"github.com/creastat/storage/vectorstore"
+	providers "github.com/madmike/go-ai-providers/core"
+	"github.com/madmike/go-infra/telemetry"
+	"github.com/madmike/go-pipeline/core"
+	"github.com/madmike/go-storage/vectorstore"
 )
-
-// DocumentMetadata represents minimal document information for enriching RAG context.
-type DocumentMetadata struct {
-	Title string
-	URL   string
-}
-
-// DocumentMetadataProvider is an optional interface for enriching RAG results with document metadata.
-// Implementations fetch document details (title, URL, etc.) to add context to retrieved chunks.
-type DocumentMetadataProvider interface {
-	GetDocumentMetadata(ctx context.Context, documentID string) (*DocumentMetadata, error)
-}
 
 // RAGStageConfig holds RAG stage configuration.
 type RAGStageConfig struct {
@@ -47,13 +34,6 @@ type RAGStageConfig struct {
 
 	// MaxChunks is the maximum number of chunks to retrieve.
 	MaxChunks int
-
-	// FallbackContent is used when RAG fails or returns no results.
-	FallbackContent string
-
-	// MetadataProvider is an optional provider for enriching results with document metadata.
-	// If provided, RAG stage will fetch document titles and URLs to add to the context.
-	MetadataProvider DocumentMetadataProvider
 
 	Logger telemetry.Logger
 }
@@ -86,11 +66,11 @@ func (s *RAGStage) InputTypes() []core.EventType {
 
 // OutputTypes returns the event types this stage produces
 func (s *RAGStage) OutputTypes() []core.EventType {
-	return []core.EventType{core.EventTypeLLM, core.EventTypeStatus}
+	return []core.EventType{core.EventTypeRAG, core.EventTypeStatus}
 }
 
 // Process implements the Stage interface.
-// It reads the query from input, retrieves context, and passes enriched input to output.
+// It reads the query from input, retrieves context, and passes raw RAG results to output.
 func (s *RAGStage) Process(ctx context.Context, input <-chan core.Event, output chan<- core.Event) error {
 	logger := s.config.Logger.WithModule(s.Name())
 	logger.Info("RAGStage started processing")
@@ -124,45 +104,35 @@ func (s *RAGStage) Process(ctx context.Context, input <-chan core.Event, output 
 
 	logger.Info("Collected query text", telemetry.String("query", queryText))
 
-	// Build context
-	ragContext, err := s.buildContext(ctx, queryText)
+	// Perform search
+	results, err := s.search(ctx, queryText)
 	if err != nil {
-		// Log error but continue silently (no context)
-		logger.Error("RAG context building failed", telemetry.Err(err))
-	}
-
-	if ragContext != "" {
-		logger.Info("found context", telemetry.Int("context_length", len(ragContext)))
+		logger.Error("RAG search failed", telemetry.Err(err))
+		// Emit empty RAG event on error to allow pipeline to continue (e.g. LLM without context)
+		output <- core.RAGEvent{
+			Query:   queryText,
+			Results: []core.RAGResult{},
+		}
 	} else {
-		logger.Info("no context found, proceeding without extra context")
+		logger.Info("RAG search completed", telemetry.Int("result_count", len(results)))
+		output <- core.RAGEvent{
+			Query:   queryText,
+			Results: results,
+		}
 	}
 
-	// Pass the original query with context to the next stage
-	// The context will be prepended to the query
-	enrichedQuery := queryText
-	if ragContext != "" {
-		enrichedQuery = fmt.Sprintf("Context:\n%s\n\nQuestion: %s", ragContext, queryText)
-	}
-
-	output <- core.LLMEvent{
-		Delta:   enrichedQuery,
-		Content: enrichedQuery,
-	}
-
-	// Emit DoneEvent to signal completion to downstream stages (like LLM)
+	// Emit DoneEvent to signal completion to downstream stages
 	logger.Info("Emitting DoneEvent")
-	output <- core.DoneEvent{
-		FullText: enrichedQuery,
-	}
+	output <- core.DoneEvent{}
 
 	return nil
 }
 
-// buildContext generates embedding and searches vector store.
-func (s *RAGStage) buildContext(ctx context.Context, query string) (string, error) {
+// search generates embedding and searches vector store.
+func (s *RAGStage) search(ctx context.Context, query string) ([]core.RAGResult, error) {
 	// Skip if no vector store or embedding provider
 	if s.config.VectorStore == nil || s.config.EmbeddingProvider == nil {
-		return "", fmt.Errorf("vector store or embedding provider not configured")
+		return nil, fmt.Errorf("vector store or embedding provider not configured")
 	}
 
 	// Generate embedding for query
@@ -171,8 +141,12 @@ func (s *RAGStage) buildContext(ctx context.Context, query string) (string, erro
 		Text:  query,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to generate embedding: %w", err)
+		return nil, fmt.Errorf("failed to generate embedding: %w", err)
 	}
+
+	s.config.Logger.Debug("Generated query embedding",
+		telemetry.Int("dimensions", len(embResp.Vector)),
+		telemetry.String("model", s.config.EmbeddingModel))
 
 	// Build search filter
 	filter := vectorstore.SearchFilter{
@@ -186,39 +160,27 @@ func (s *RAGStage) buildContext(ctx context.Context, query string) (string, erro
 		filter.SourceID = s.config.SourceID
 	}
 
+	logger := s.config.Logger.WithModule(s.Name())
+	logger.Info("Executing vector search",
+		telemetry.Float64("threshold", float64(filter.MinScore)),
+		telemetry.String("source_ids", fmt.Sprintf("%v", filter.SourceIDs)),
+		telemetry.String("query", query))
+
 	results, err := s.config.VectorStore.Search(ctx, embResp.Vector, filter, s.config.MaxChunks)
 	if err != nil {
-		return "", fmt.Errorf("vector search failed: %w", err)
+		return nil, fmt.Errorf("vector search failed: %w", err)
 	}
 
-	if len(results) == 0 {
-		return "", nil
-	}
-
-	// Format context from results
-	var contextParts []string
-	for _, result := range results {
-		if result.Content == "" {
-			continue
+	// Map results to core.RAGResult
+	ragResults := make([]core.RAGResult, len(results))
+	for i, res := range results {
+		ragResults[i] = core.RAGResult{
+			Content:    res.Content,
+			Score:      res.Score,
+			DocumentID: res.DocumentID,
+			Metadata:   res.Metadata,
 		}
-
-		contextEntry := result.Content
-
-		// Enrich with document metadata if provider is available
-		if s.config.MetadataProvider != nil && result.DocumentID != "" {
-			if doc, err := s.config.MetadataProvider.GetDocumentMetadata(ctx, result.DocumentID); err == nil && doc != nil {
-				// Prepend document title and URL if available
-				if doc.Title != "" {
-					contextEntry = fmt.Sprintf("**%s**\n%s", doc.Title, contextEntry)
-				}
-				if doc.URL != "" {
-					contextEntry = fmt.Sprintf("%s\n(Source: %s)", contextEntry, doc.URL)
-				}
-			}
-		}
-
-		contextParts = append(contextParts, contextEntry)
 	}
 
-	return strings.Join(contextParts, "\n\n---\n\n"), nil
+	return ragResults, nil
 }

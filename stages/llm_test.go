@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/creastat/pipeline/core"
-	providers "github.com/creastat/providers/core"
+	providers "github.com/madmike/go-ai-providers/core"
+	"github.com/madmike/go-pipeline/core"
 	"pgregory.net/rapid"
 )
 

@@ -3,7 +3,7 @@ package protocol
 import (
 	"time"
 
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // EventToMessage converts a pipeline event to an output message

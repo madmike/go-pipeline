@@ -93,3 +93,60 @@ type ServiceMessageEvent struct {
 func (e ServiceMessageEvent) EventType() EventType {
 	return EventTypeServiceMessage
 }
+
+// Chunk represents a text chunk with metadata
+type Chunk struct {
+	Index       int
+	Content     string
+	TokenCount  int
+	HeadingPath string
+	Metadata    map[string]any
+}
+
+// DocumentEvent represents a document flowing through the ingestion pipeline
+type DocumentEvent struct {
+	SourceID   string
+	DocumentID string
+	URL        string
+	Title      string
+	Content    string
+	Language   string
+	Metadata   map[string]any
+	Chunks     []Chunk
+	Embeddings [][]float32
+	Error      error
+	IsFinal    bool
+}
+
+func (e DocumentEvent) EventType() EventType {
+	return EventTypeDocument
+}
+
+// RAGResult represents a single result from RAG retrieval
+type RAGResult struct {
+	Content    string
+	Score      float32
+	DocumentID string
+	Metadata   map[string]any
+}
+
+// RAGEvent represents the output of the RAG stage
+type RAGEvent struct {
+	Query    string
+	Results  []RAGResult
+	Metadata map[string]any
+}
+
+func (e RAGEvent) EventType() EventType {
+	return EventTypeRAG
+}
+
+// UserMessageEvent represents a direct user message injected into the pipeline
+type UserMessageEvent struct {
+	Content string
+	Role    string
+}
+
+func (e UserMessageEvent) EventType() EventType {
+	return EventTypeUserMessage
+}

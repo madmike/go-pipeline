@@ -12,6 +12,9 @@ const (
 	EventTypeError          EventType = "error"
 	EventTypeDone           EventType = "done"
 	EventTypeServiceMessage EventType = "service_message"
+	EventTypeDocument       EventType = "document"
+	EventTypeRAG            EventType = "rag"
+	EventTypeUserMessage    EventType = "user_message"
 )
 
 // StatusType defines the current processing status
@@ -39,16 +42,16 @@ const (
 type ActionType string
 
 const (
-	ActionNavigate   ActionType = "navigate"
-	ActionFillForm   ActionType = "fill_form"
-	ActionClick      ActionType = "click"
-	ActionScroll     ActionType = "scroll"
-	ActionShowModal  ActionType = "show_modal"
-	ActionHideModal  ActionType = "hide_modal"
-	ActionNotify     ActionType = "notify"
-	ActionDownload   ActionType = "download"
-	ActionCopy       ActionType = "copy"
-	ActionCustom     ActionType = "custom"
+	ActionNavigate  ActionType = "navigate"
+	ActionFillForm  ActionType = "fill_form"
+	ActionClick     ActionType = "click"
+	ActionScroll    ActionType = "scroll"
+	ActionShowModal ActionType = "show_modal"
+	ActionHideModal ActionType = "hide_modal"
+	ActionNotify    ActionType = "notify"
+	ActionDownload  ActionType = "download"
+	ActionCopy      ActionType = "copy"
+	ActionCustom    ActionType = "custom"
 )
 
 // ServiceMessageType defines the type of service message
@@ -58,4 +61,5 @@ const (
 	ServiceMessageRetryRequest ServiceMessageType = "retry_request"
 	ServiceMessageInfo         ServiceMessageType = "info"
 	ServiceMessageWarning      ServiceMessageType = "warning"
+	ServiceMessageError        ServiceMessageType = "error"
 )

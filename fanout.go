@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // FanOutRouter routes events from a single input to multiple downstream branches

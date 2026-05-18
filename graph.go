@@ -2,17 +2,17 @@ package pipeline
 
 import (
 	"fmt"
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // PipelineGraph represents the compiled pipeline topology as a directed acyclic graph (DAG)
 type PipelineGraph struct {
 	// nodes maps stage names to their graph node representations
 	nodes map[string]*graphNode
-	
+
 	// entryNode is the name of the entry point stage
 	entryNode string
-	
+
 	// exitNodes are the names of terminal stages
 	exitNodes []string
 }
@@ -21,19 +21,19 @@ type PipelineGraph struct {
 type graphNode struct {
 	// name is the unique identifier for this node
 	name string
-	
+
 	// stage is the actual processing stage
 	stage core.Stage
-	
+
 	// outputs are the outgoing edges from this node
 	outputs []*graphEdge
-	
+
 	// inputs are the incoming edges to this node
 	inputs []*graphEdge
-	
+
 	// fanOut configuration if this node routes to multiple branches
 	fanOut *core.FanOutConfig
-	
+
 	// barrier configuration if this node synchronizes multiple branches
 	barrier *core.BarrierConfig
 }
@@ -42,10 +42,10 @@ type graphNode struct {
 type graphEdge struct {
 	// from is the source node
 	from *graphNode
-	
+
 	// to is the destination node
 	to *graphNode
-	
+
 	// eventFilter maps event types to whether they should be forwarded
 	// nil means forward all events
 	eventFilter map[core.EventType]bool
@@ -64,7 +64,7 @@ func (pg *PipelineGraph) AddNode(name string, stage core.Stage, fanOut *core.Fan
 	if _, exists := pg.nodes[name]; exists {
 		return fmt.Errorf("node %q already exists in graph", name)
 	}
-	
+
 	pg.nodes[name] = &graphNode{
 		name:    name,
 		stage:   stage,
@@ -73,7 +73,7 @@ func (pg *PipelineGraph) AddNode(name string, stage core.Stage, fanOut *core.Fan
 		fanOut:  fanOut,
 		barrier: barrier,
 	}
-	
+
 	return nil
 }
 
@@ -83,12 +83,12 @@ func (pg *PipelineGraph) AddEdge(fromName, toName string, eventFilter []core.Eve
 	if !exists {
 		return fmt.Errorf("source node %q does not exist", fromName)
 	}
-	
+
 	toNode, exists := pg.nodes[toName]
 	if !exists {
 		return fmt.Errorf("destination node %q does not exist", toName)
 	}
-	
+
 	// Build event filter map
 	var filterMap map[core.EventType]bool
 	if len(eventFilter) > 0 {
@@ -97,16 +97,16 @@ func (pg *PipelineGraph) AddEdge(fromName, toName string, eventFilter []core.Eve
 			filterMap[et] = true
 		}
 	}
-	
+
 	edge := &graphEdge{
 		from:        fromNode,
 		to:          toNode,
 		eventFilter: filterMap,
 	}
-	
+
 	fromNode.outputs = append(fromNode.outputs, edge)
 	toNode.inputs = append(toNode.inputs, edge)
-	
+
 	return nil
 }
 
@@ -209,7 +209,7 @@ func (e *graphEdge) ShouldForwardEvent(eventType core.EventType) bool {
 	if e.eventFilter == nil {
 		return true
 	}
-	
+
 	// Check if the event type is in the filter
 	return e.eventFilter[eventType]
 }

@@ -3,8 +3,8 @@ package stages
 import (
 	"context"
 
-	"github.com/creastat/infra/telemetry"
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-infra/telemetry"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // HistorySaver is a function that saves the assistant's response

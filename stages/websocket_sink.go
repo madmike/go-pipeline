@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/creastat/infra/telemetry"
-	"github.com/creastat/pipeline/core"
-	"github.com/creastat/pipeline/protocol"
 	"github.com/gorilla/websocket"
+	"github.com/madmike/go-infra/telemetry"
+	"github.com/madmike/go-pipeline/core"
+	"github.com/madmike/go-pipeline/protocol"
 )
 
 // WebSocketSinkConfig holds WebSocket sink configuration

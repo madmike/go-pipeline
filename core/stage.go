@@ -9,11 +9,11 @@ const EventTypeWildcard EventType = "*"
 type Stage interface {
 	Name() string
 	Process(ctx context.Context, input <-chan Event, output chan<- Event) error
-	
+
 	// InputTypes returns the event types this stage accepts.
 	// Returns empty slice to accept all event types.
 	InputTypes() []EventType
-	
+
 	// OutputTypes returns the event types this stage produces.
 	OutputTypes() []EventType
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-pipeline/core"
 )
 
 func TestTextProcessorStage_StripMarkdown(t *testing.T) {

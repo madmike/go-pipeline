@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	providers "github.com/creastat/providers/core"
-	"github.com/creastat/storage/vectorstore"
+	providers "github.com/madmike/go-ai-providers/core"
+	"github.com/madmike/go-storage/vectorstore"
 	"pgregory.net/rapid"
 )
 
@@ -22,7 +22,6 @@ func TestPropertyRAGEmbeddingGeneration(t *testing.T) {
 			SourceID:          "source_1",
 			Threshold:         0.7,
 			MaxChunks:         5,
-			FallbackContent:   "fallback",
 		})
 
 		// Verify stage is created
@@ -62,7 +61,6 @@ func TestPropertyRAGQdrantSearch(t *testing.T) {
 			SourceID:          sourceID,
 			Threshold:         threshold,
 			MaxChunks:         5,
-			FallbackContent:   "fallback",
 		})
 
 		// Verify configuration
@@ -122,8 +120,7 @@ func TestPropertyRAGResultExtraction(t *testing.T) {
 // static content from the source configuration.
 func TestPropertyRAGFallback(t *testing.T) {
 	rapid.Check(t, func(rt *rapid.T) {
-		// Generate fallback content
-		fallbackContent := rapid.StringN(5, 50, 100).Draw(rt, "fallbackContent")
+		// Generate fallback content removed
 
 		// Create RAG stage with error provider
 		stage := NewRAGStage(RAGStageConfig{
@@ -133,13 +130,11 @@ func TestPropertyRAGFallback(t *testing.T) {
 			SourceID:          "source_1",
 			Threshold:         0.7,
 			MaxChunks:         5,
-			FallbackContent:   fallbackContent,
+			// FallbackContent:   fallbackContent, // Removed
 		})
 
 		// Verify fallback content is set
-		if stage.config.FallbackContent != fallbackContent {
-			rt.Fatalf("Fallback content not set correctly")
-		}
+		// Removed check
 
 		// Verify error providers are configured
 		if stage.config.VectorStore == nil {
@@ -176,11 +171,19 @@ func (s *TestVectorStore) Close() error {
 	return nil
 }
 
+func (s *TestVectorStore) Upsert(ctx context.Context, points []vectorstore.Point) error {
+	return nil
+}
+
 // TestErrorVectorStore returns errors for testing fallback
 type TestErrorVectorStore struct{}
 
 func (s *TestErrorVectorStore) Search(ctx context.Context, vector []float32, filter vectorstore.SearchFilter, limit int) ([]vectorstore.SearchResult, error) {
 	return nil, fmt.Errorf("vector store error")
+}
+
+func (s *TestErrorVectorStore) Upsert(ctx context.Context, points []vectorstore.Point) error {
+	return fmt.Errorf("upsert error")
 }
 
 func (s *TestErrorVectorStore) Close() error {

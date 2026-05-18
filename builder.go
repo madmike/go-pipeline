@@ -3,7 +3,7 @@ package pipeline
 import (
 	"fmt"
 
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // GraphBuilder constructs pipeline DAGs with a fluent API

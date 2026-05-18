@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // BarrierStage synchronizes multiple upstream branches and waits for all to complete

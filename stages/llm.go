@@ -2,12 +2,13 @@ package stages
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/creastat/infra/telemetry"
-	"github.com/creastat/pipeline/core"
-	providers "github.com/creastat/providers/core"
+	providers "github.com/madmike/go-ai-providers/core"
+	"github.com/madmike/go-infra/telemetry"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // LLMStageConfig holds LLM stage configuration
@@ -29,6 +30,9 @@ type LLMStage struct {
 
 // NewLLMStage creates a new LLM stage
 func NewLLMStage(config LLMStageConfig) *LLMStage {
+	if config.Logger == nil {
+		config.Logger = &telemetry.NoOpLogger{}
+	}
 	return &LLMStage{
 		config: config,
 	}
@@ -63,8 +67,13 @@ func (s *LLMStage) Process(ctx context.Context, input <-chan core.Event, output 
 		eventCount++
 		switch e := event.(type) {
 		case core.LLMEvent:
-			fullText += e.Delta
-			logger.Debug("Received text input message", telemetry.String("text", e.Delta))
+			// User input may come in Content (full message) or Delta (streamed chunk).
+			text := e.Content
+			if text == "" {
+				text = e.Delta
+			}
+			fullText += text
+			logger.Debug("Received text input message", telemetry.String("text", text))
 		case core.STTEvent:
 			fullText += e.Text
 			logger.Debug("Received STT input message", telemetry.String("text", e.Text))
@@ -141,6 +150,13 @@ EndCollection:
 		Temperature: s.config.Temperature,
 		MaxTokens:   s.config.MaxTokens,
 	}
+	if reqJSON, err := json.Marshal(req); err == nil {
+		logger.Trace("LLM full request",
+			telemetry.String("provider", s.config.Provider.Name()),
+			telemetry.String("request", string(reqJSON)))
+	} else {
+		logger.Warn("Failed to marshal LLM request for trace logging", telemetry.Err(err))
+	}
 
 	// Stream chat completion
 	stream, err := s.config.Provider.StreamChatCompletion(ctx, req)
@@ -190,6 +206,9 @@ EndCollection:
 
 		if chunk == nil || chunk.Done {
 			logger.Info("LLM stream finished", telemetry.Int("chunks_received", chunkCount), telemetry.String("full_response", fullResponse))
+			logger.Trace("LLM full response",
+				telemetry.String("provider", s.config.Provider.Name()),
+				telemetry.String("response", fullResponse))
 			break
 		}
 

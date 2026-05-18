@@ -6,8 +6,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/creastat/infra/telemetry"
-	"github.com/creastat/pipeline/core"
+	"github.com/madmike/go-infra/telemetry"
+	"github.com/madmike/go-pipeline/core"
 )
 
 // TextProcessorStageConfig holds text processor configuration
