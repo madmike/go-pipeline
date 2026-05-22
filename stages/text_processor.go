@@ -58,7 +58,11 @@ func (s *TextProcessorStage) OutputTypes() []core.EventType {
 
 // Process implements the Stage interface
 func (s *TextProcessorStage) Process(ctx context.Context, input <-chan core.Event, output chan<- core.Event) error {
-	logger := s.config.Logger.WithModule(s.Name())
+	logger := s.config.Logger
+	if logger == nil {
+		logger = &telemetry.NoOpLogger{}
+	}
+	logger = logger.WithModule(s.Name())
 
 	var buffer strings.Builder
 

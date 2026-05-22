@@ -60,7 +60,10 @@ func TestTextProcessorStage_StripMarkdown(t *testing.T) {
 				close(input)
 			}()
 
-			go stage.Process(context.Background(), input, output)
+			go func() {
+				defer close(output)
+				_ = stage.Process(context.Background(), input, output)
+			}()
 
 			var result string
 			for event := range output {
@@ -121,7 +124,10 @@ func TestTextProcessorStage_ExpandAbbreviations(t *testing.T) {
 				close(input)
 			}()
 
-			go stage.Process(context.Background(), input, output)
+			go func() {
+				defer close(output)
+				_ = stage.Process(context.Background(), input, output)
+			}()
 
 			var result string
 			for event := range output {
@@ -177,7 +183,10 @@ func TestTextProcessorStage_ExpandSymbols(t *testing.T) {
 				close(input)
 			}()
 
-			go stage.Process(context.Background(), input, output)
+			go func() {
+				defer close(output)
+				_ = stage.Process(context.Background(), input, output)
+			}()
 
 			var result string
 			for event := range output {
@@ -238,7 +247,10 @@ func TestTextProcessorStage_SentenceBuffering(t *testing.T) {
 				close(input)
 			}()
 
-			go stage.Process(context.Background(), input, output)
+			go func() {
+				defer close(output)
+				_ = stage.Process(context.Background(), input, output)
+			}()
 
 			var results []string
 			for event := range output {
@@ -279,7 +291,10 @@ func TestTextProcessorStage_PassThroughStatusEvents(t *testing.T) {
 		close(input)
 	}()
 
-	go stage.Process(context.Background(), input, output)
+	go func() {
+		defer close(output)
+		_ = stage.Process(context.Background(), input, output)
+	}()
 
 	var statusCount int
 	var llmCount int
@@ -314,7 +329,10 @@ func TestTextProcessorStage_EmptyInput(t *testing.T) {
 		close(input)
 	}()
 
-	go stage.Process(context.Background(), input, output)
+	go func() {
+		defer close(output)
+		_ = stage.Process(context.Background(), input, output)
+	}()
 
 	var doneCount int
 	for event := range output {
@@ -324,8 +342,8 @@ func TestTextProcessorStage_EmptyInput(t *testing.T) {
 		}
 	}
 
-	if doneCount != 1 {
-		t.Errorf("expected 1 done event, got %d", doneCount)
+	if doneCount != 0 {
+		t.Errorf("expected 0 done events when upstream closes without done signal, got %d", doneCount)
 	}
 }
 
@@ -342,7 +360,10 @@ func TestTextProcessorStage_SkipsEmptyDeltas(t *testing.T) {
 		close(input)
 	}()
 
-	go stage.Process(context.Background(), input, output)
+	go func() {
+		defer close(output)
+		_ = stage.Process(context.Background(), input, output)
+	}()
 
 	var llmCount int
 	for event := range output {

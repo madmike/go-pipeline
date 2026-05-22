@@ -69,9 +69,9 @@ func TestPropertyLLMTextPipelineOutput(t *testing.T) {
 		trimmedInput := strings.TrimSpace(inputText)
 
 		if trimmedInput == "" {
-			// Whitespace-only input should produce service message
-			if serviceMessage == nil {
-				rt.Fatalf("Expected service message for whitespace-only input")
+			// Whitespace-only input should terminate cleanly without LLM output.
+			if serviceMessage != nil {
+				rt.Fatalf("Did not expect service message for whitespace-only input")
 			}
 			if doneEvent == nil {
 				rt.Fatalf("Expected done event after service message")

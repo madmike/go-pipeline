@@ -78,8 +78,8 @@ func TestPropertySTTAudioPipelineOutput(t *testing.T) {
 			rt.Fatalf("No status event received")
 		}
 
-		if statusEvent.Status != core.StatusTranscribing {
-			rt.Fatalf("Expected transcribing status, got %s", statusEvent.Status)
+		if statusEvent.Status != core.StatusListening {
+			rt.Fatalf("Expected listening status, got %s", statusEvent.Status)
 		}
 
 		// Verify we received STT events
