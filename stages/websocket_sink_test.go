@@ -57,7 +57,7 @@ func TestWebSocketSink_AudioEvent(t *testing.T) {
 	defer cancel()
 
 	// Start sink
-	go sink.Process(ctx, input, output)
+	go func() { _ = sink.Process(ctx, input, output) }()
 
 	// Send AudioEvent
 	audioData := []byte{0x01, 0x02, 0x03, 0x04}
@@ -111,7 +111,7 @@ func TestWebSocketSink_AudioEvent(t *testing.T) {
 
 	// Create new input channel for second sink
 	input2 := make(chan core.Event)
-	go sink2.Process(ctx, input2, output)
+	go func() { _ = sink2.Process(ctx, input2, output) }()
 
 	// Send AudioEvent again to the new setup
 	input2 <- core.AudioEvent{

@@ -71,7 +71,7 @@ func (ws *WebSocketSink) Process(ctx context.Context, input <-chan core.Event, o
 						24000, // TODO: Get this from config/event
 					)
 					if data, err := json.Marshal(startMsg); err == nil {
-						ws.config.Conn.WriteMessage(websocket.TextMessage, data)
+						_ = ws.config.Conn.WriteMessage(websocket.TextMessage, data)
 						logger.Info("Sent audio start message", telemetry.String("session_id", ws.config.SessionID))
 					}
 					ws.audioStarted = true
@@ -99,7 +99,7 @@ func (ws *WebSocketSink) Process(ctx context.Context, input <-chan core.Event, o
 						0, // Duration not tracked here yet
 					)
 					if data, err := json.Marshal(endMsg); err == nil {
-						ws.config.Conn.WriteMessage(websocket.TextMessage, data)
+						_ = ws.config.Conn.WriteMessage(websocket.TextMessage, data)
 						logger.Debug("Sent audio end message", telemetry.String("session_id", ws.config.SessionID))
 					}
 					ws.audioStarted = false
@@ -112,7 +112,7 @@ func (ws *WebSocketSink) Process(ctx context.Context, input <-chan core.Event, o
 				if msg != nil {
 					data, err := json.Marshal(msg)
 					if err == nil {
-						ws.config.Conn.WriteMessage(websocket.TextMessage, data)
+						_ = ws.config.Conn.WriteMessage(websocket.TextMessage, data)
 						logger.Debug("Sent event to WebSocket", telemetry.String("type", string(msg.Type)), telemetry.String("session_id", ws.config.SessionID))
 					}
 				}

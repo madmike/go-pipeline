@@ -56,7 +56,7 @@ func TestPropertyActionEventEmission(t *testing.T) {
 
 		go func() {
 			defer close(output)
-			stage.Process(ctx, input, output)
+			_ = stage.Process(ctx, input, output)
 		}()
 
 		// Collect output events
@@ -95,6 +95,7 @@ func TestPropertyActionEventEmission(t *testing.T) {
 		// Verify done event contains action count
 		if doneEvent == nil {
 			rt.Fatalf("No done event received")
+			return
 		}
 
 		if doneEvent.ActionsCount != len(actions) {

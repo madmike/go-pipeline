@@ -58,8 +58,8 @@ func TestGraphEdgeCreationStandalone(t *testing.T) {
 	stage1 := &MockStage{name: "stage1", outputTypes: []core.EventType{core.EventTypeSTT}}
 	stage2 := &MockStage{name: "stage2", inputTypes: []core.EventType{core.EventTypeSTT}}
 
-	graph.AddNode("stage1", stage1, nil, nil)
-	graph.AddNode("stage2", stage2, nil, nil)
+	_ = graph.AddNode("stage1", stage1, nil, nil)
+	_ = graph.AddNode("stage2", stage2, nil, nil)
 
 	// Add edge with filter
 	err := graph.AddEdge("stage1", "stage2", []core.EventType{core.EventTypeSTT})
@@ -89,8 +89,8 @@ func TestGraphEdgeNoFilterStandalone(t *testing.T) {
 	stage1 := &MockStage{name: "stage1"}
 	stage2 := &MockStage{name: "stage2"}
 
-	graph.AddNode("stage1", stage1, nil, nil)
-	graph.AddNode("stage2", stage2, nil, nil)
+	_ = graph.AddNode("stage1", stage1, nil, nil)
+	_ = graph.AddNode("stage2", stage2, nil, nil)
 
 	// Add edge without filter
 	err := graph.AddEdge("stage1", "stage2", nil)
@@ -116,7 +116,7 @@ func TestGraphEdgeNoFilterStandalone(t *testing.T) {
 func TestGraphEdgeInvalidNodeStandalone(t *testing.T) {
 	graph := NewPipelineGraph()
 	stage := &MockStage{name: "stage1"}
-	graph.AddNode("stage1", stage, nil, nil)
+	_ = graph.AddNode("stage1", stage, nil, nil)
 
 	// Try to add edge from non-existent node
 	err := graph.AddEdge("nonexistent", "stage1", nil)
@@ -135,7 +135,7 @@ func TestGraphEdgeInvalidNodeStandalone(t *testing.T) {
 func TestGraphEntryNodeStandalone(t *testing.T) {
 	graph := NewPipelineGraph()
 	stage := &MockStage{name: "entry"}
-	graph.AddNode("entry", stage, nil, nil)
+	_ = graph.AddNode("entry", stage, nil, nil)
 
 	err := graph.SetEntryNode("entry")
 	if err != nil {
@@ -158,8 +158,8 @@ func TestGraphExitNodesStandalone(t *testing.T) {
 	stage1 := &MockStage{name: "stage1"}
 	stage2 := &MockStage{name: "stage2"}
 
-	graph.AddNode("stage1", stage1, nil, nil)
-	graph.AddNode("stage2", stage2, nil, nil)
+	_ = graph.AddNode("stage1", stage1, nil, nil)
+	_ = graph.AddNode("stage2", stage2, nil, nil)
 
 	err := graph.AddExitNode("stage1")
 	if err != nil {
@@ -186,15 +186,15 @@ func TestValidateGraphRejectsCyclesStandalone(t *testing.T) {
 	stageB := &MockStage{name: "B"}
 	stageC := &MockStage{name: "C"}
 
-	graph.AddNode("A", stageA, nil, nil)
-	graph.AddNode("B", stageB, nil, nil)
-	graph.AddNode("C", stageC, nil, nil)
+	_ = graph.AddNode("A", stageA, nil, nil)
+	_ = graph.AddNode("B", stageB, nil, nil)
+	_ = graph.AddNode("C", stageC, nil, nil)
 
-	graph.AddEdge("A", "B", nil)
-	graph.AddEdge("B", "C", nil)
-	graph.AddEdge("C", "A", nil) // Creates cycle
+	_ = graph.AddEdge("A", "B", nil)
+	_ = graph.AddEdge("B", "C", nil)
+	_ = graph.AddEdge("C", "A", nil) // Creates cycle
 
-	graph.SetEntryNode("A")
+	_ = graph.SetEntryNode("A")
 
 	err := ValidateGraph(graph)
 	if err == nil {
@@ -211,14 +211,14 @@ func TestValidateGraphRejectsUnreachableStandalone(t *testing.T) {
 	stageB := &MockStage{name: "B"}
 	stageC := &MockStage{name: "C"}
 
-	graph.AddNode("A", stageA, nil, nil)
-	graph.AddNode("B", stageB, nil, nil)
-	graph.AddNode("C", stageC, nil, nil)
+	_ = graph.AddNode("A", stageA, nil, nil)
+	_ = graph.AddNode("B", stageB, nil, nil)
+	_ = graph.AddNode("C", stageC, nil, nil)
 
 	// Only connect A -> B, leaving C unreachable
-	graph.AddEdge("A", "B", nil)
+	_ = graph.AddEdge("A", "B", nil)
 
-	graph.SetEntryNode("A")
+	_ = graph.SetEntryNode("A")
 
 	err := ValidateGraph(graph)
 	if err == nil {
@@ -235,15 +235,15 @@ func TestValidateGraphConstructsValidTopologyStandalone(t *testing.T) {
 	stageB := &MockStage{name: "B"}
 	stageC := &MockStage{name: "C"}
 
-	graph.AddNode("A", stageA, nil, nil)
-	graph.AddNode("B", stageB, nil, nil)
-	graph.AddNode("C", stageC, nil, nil)
+	_ = graph.AddNode("A", stageA, nil, nil)
+	_ = graph.AddNode("B", stageB, nil, nil)
+	_ = graph.AddNode("C", stageC, nil, nil)
 
-	graph.AddEdge("A", "B", nil)
-	graph.AddEdge("B", "C", nil)
+	_ = graph.AddEdge("A", "B", nil)
+	_ = graph.AddEdge("B", "C", nil)
 
-	graph.SetEntryNode("A")
-	graph.AddExitNode("C")
+	_ = graph.SetEntryNode("A")
+	_ = graph.AddExitNode("C")
 
 	err := ValidateGraph(graph)
 	if err != nil {
@@ -279,13 +279,13 @@ func TestTypeCompatibilityValidationStandalone(t *testing.T) {
 		inputTypes: []core.EventType{core.EventTypeLLM}, // Incompatible
 	}
 
-	graph.AddNode("A", stageA, nil, nil)
-	graph.AddNode("B", stageB, nil, nil)
+	_ = graph.AddNode("A", stageA, nil, nil)
+	_ = graph.AddNode("B", stageB, nil, nil)
 
 	// Connect with filter that doesn't match downstream input
-	graph.AddEdge("A", "B", []core.EventType{core.EventTypeSTT})
+	_ = graph.AddEdge("A", "B", []core.EventType{core.EventTypeSTT})
 
-	graph.SetEntryNode("A")
+	_ = graph.SetEntryNode("A")
 
 	err := ValidateGraph(graph)
 	if err == nil {
@@ -309,11 +309,11 @@ func TestTypeCompatibilityWithWildcardStandalone(t *testing.T) {
 		inputTypes: []core.EventType{}, // Accepts all
 	}
 
-	graph.AddNode("A", stageA, nil, nil)
-	graph.AddNode("B", stageB, nil, nil)
+	_ = graph.AddNode("A", stageA, nil, nil)
+	_ = graph.AddNode("B", stageB, nil, nil)
 
-	graph.AddEdge("A", "B", nil)
-	graph.SetEntryNode("A")
+	_ = graph.AddEdge("A", "B", nil)
+	_ = graph.SetEntryNode("A")
 
 	err := ValidateGraph(graph)
 	if err != nil {
@@ -337,12 +337,12 @@ func TestTypeCompatibilityWithFilterStandalone(t *testing.T) {
 		inputTypes: []core.EventType{core.EventTypeLLM},
 	}
 
-	graph.AddNode("A", stageA, nil, nil)
-	graph.AddNode("B", stageB, nil, nil)
+	_ = graph.AddNode("A", stageA, nil, nil)
+	_ = graph.AddNode("B", stageB, nil, nil)
 
 	// Filter to only forward LLM events
-	graph.AddEdge("A", "B", []core.EventType{core.EventTypeLLM})
-	graph.SetEntryNode("A")
+	_ = graph.AddEdge("A", "B", []core.EventType{core.EventTypeLLM})
+	_ = graph.SetEntryNode("A")
 
 	err := ValidateGraph(graph)
 	if err != nil {

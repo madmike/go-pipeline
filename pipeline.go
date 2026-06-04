@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"runtime"
 	"sync"
 
@@ -48,7 +49,7 @@ func (p *Pipeline) Execute(ctx context.Context, input <-chan core.Event) core.Pi
 
 		// Execute the graph
 		if err := p.executeGraph(pipelineCtx, input, outputChan); err != nil {
-			fmt.Printf("Pipeline execution failed: %v\n", err)
+			slog.Error("pipeline execution failed", "error", err)
 			return
 		}
 	}()

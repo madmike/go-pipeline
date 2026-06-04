@@ -68,7 +68,7 @@ func TestPropertyTTSSentenceBuffering(t *testing.T) {
 
 		go func() {
 			defer close(output)
-			stage.Process(ctx, input, output)
+			_ = stage.Process(ctx, input, output)
 		}()
 
 		// Collect output events
@@ -87,6 +87,7 @@ func TestPropertyTTSSentenceBuffering(t *testing.T) {
 		// Verify we received status event
 		if statusEvent == nil {
 			rt.Fatalf("No status event received")
+			return
 		}
 
 		if statusEvent.Status != core.StatusSpeaking {
